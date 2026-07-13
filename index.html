@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mindmap Proposal Tracker - Sơ đồ Tiến độ Tờ trình</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-row">
+                    <div class="logo">
+                        <i class="fa-solid fa-diagram-project logo-icon"></i>
+                        <span>DocMap Tracker</span>
+                    </div>
+                    <button id="btn-theme-toggle" class="theme-toggle-btn" title="Đổi giao diện Sáng/Tối">
+                        <i class="fa-solid fa-moon"></i>
+                    </button>
+                </div>
+                <button id="btn-new-proposal" class="btn btn-primary" title="Tạo tờ trình mới">
+                    <i class="fa-solid fa-plus"></i> Tạo Tờ Trình
+                </button>
+            </div>
+            
+            <div class="search-sort-section">
+                <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                    <input type="text" id="search-input" placeholder="Tìm kiếm tờ trình, ý kiến...">
+                </div>
+                <!-- Committee Category Filter -->
+                <div class="category-filter-box">
+                    <i class="fa-solid fa-tags filter-icon"></i>
+                    <select id="category-filter-select" title="Lọc theo Ủy ban">
+                        <option value="all">Tất cả Ủy ban</option>
+                        <option value="ubkhcl">UB KHCL (Kế hoạch Chiến lược)</option>
+                        <option value="ubns">UB NS (Nhân sự)</option>
+                    </select>
+                </div>
+                <!-- Date Filter Input -->
+                <div class="date-filter-box">
+                    <i class="fa-regular fa-calendar-days date-icon"></i>
+                    <input type="date" id="date-filter-input" title="Lọc theo ngày tạo">
+                    <button id="btn-clear-date" class="clear-date-btn" title="Xóa lọc ngày" style="display: none;">&times;</button>
+                </div>
+                <div class="sort-box">
+                    <label for="sort-select"><i class="fa-solid fa-arrow-down-wide-short"></i> Sắp xếp:</label>
+                    <select id="sort-select">
+                        <option value="latest">Mới nhất</option>
+                        <option value="oldest">Cũ nhất</option>
+                        <option value="alphabetical">Tên A-Z</option>
+                        <option value="status">Trạng thái</option>
+                    </select>
+                </div>
+                <!-- Backup & Restore Data Row (Hidden per request) -->
+                <div class="backup-restore-row" style="display: none;">
+                    <button id="btn-export-data" class="btn btn-secondary btn-sm" title="Xuất toàn bộ dữ liệu ra tệp JSON">
+                        <i class="fa-solid fa-file-export"></i> Xuất JSON
+                    </button>
+                    <button id="btn-import-data" class="btn btn-secondary btn-sm" title="Nhập dữ liệu từ tệp JSON">
+                        <i class="fa-solid fa-file-import"></i> Nhập JSON
+                    </button>
+                    <input type="file" id="import-file-input" style="display: none;" accept=".json">
+                </div>
+            </div>
+
+            <!-- Status Tabs for 100+ proposals filtering -->
+            <div class="status-tabs-container">
+                <div class="status-tabs">
+                    <button class="tab-btn active" data-status="all">
+                        Tất cả <span class="tab-count" id="count-all">0</span>
+                    </button>
+                    <button class="tab-btn" data-status="pending">
+                        Chờ xử lý <span class="tab-count" id="count-pending">0</span>
+                    </button>
+                    <button class="tab-btn" data-status="in-progress">
+                        Đang xử lý <span class="tab-count" id="count-in-progress">0</span>
+                    </button>
+                    <button class="tab-btn" data-status="processed">
+                        Đã xử lý <span class="tab-count" id="count-processed">0</span>
+                    </button>
+                    <button class="tab-btn" data-status="supplementing">
+                        Chờ bổ sung <span class="tab-count" id="count-supplementing">0</span>
+                    </button>
+                    <button class="tab-btn" data-status="completed">
+                        Đã hoàn thiện <span class="tab-count" id="count-completed">0</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="proposal-list-wrapper">
+                <ul id="proposal-list" class="proposal-list">
+                    <!-- Dynamic proposal items will be rendered here -->
+                </ul>
+            </div>
+        </aside>
+
+        <!-- Sidebar Resizer Splitter -->
+        <div class="sidebar-resizer" id="sidebar-resizer"></div>
+
+        <!-- Main Workspace -->
+        <main class="workspace">
+            <header class="workspace-header">
+                <div class="active-proposal-info" id="active-proposal-info">
+                    <div class="placeholder-info">
+                        <h2>Vui lòng chọn hoặc tạo mới một Tờ trình để xem tiến độ</h2>
+                        <p>Hệ thống hỗ trợ quản lý tiến độ xử lý tờ trình dạng sơ đồ tư duy trực quan.</p>
+                    </div>
+                </div>
+                <div class="header-actions" id="header-actions" style="display: none;">
+                    <button id="btn-share-proposal" class="btn btn-secondary" title="Chia sẻ tờ trình này qua đường dẫn">
+                        <i class="fa-solid fa-share-nodes"></i> Chia Sẻ
+                    </button>
+                    <button id="btn-add-node-global" class="btn btn-primary" title="Thêm bước xử lý mới">
+                        <i class="fa-solid fa-plus-circle"></i> Thêm Bước
+                    </button>
+                    <button id="btn-delete-proposal" class="btn btn-danger" title="Xóa tờ trình này">
+                        <i class="fa-solid fa-trash"></i> Xóa
+                    </button>
+                </div>
+            </header>
+
+            <div class="canvas-container" id="canvas-container" style="display: none;">
+                <!-- Viewport container that wraps the zoomable content -->
+                <div class="map-viewport" id="map-viewport">
+                    <div class="map-content" id="map-content">
+                        <!-- SVG overlay for drawing connection lines -->
+                        <svg id="svg-canvas" class="svg-canvas">
+                            <defs>
+                                <!-- Arrowhead markers for mindmap connections -->
+                                <marker id="arrow-completed" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                    <path d="M 0 1 L 10 5 L 0 9 z" fill="var(--color-success)" />
+                                </marker>
+                                <marker id="arrow-processed" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                    <path d="M 0 1 L 10 5 L 0 9 z" fill="var(--color-processed)" />
+                                </marker>
+                                <marker id="arrow-in-progress" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                    <path d="M 0 1 L 10 5 L 0 9 z" fill="var(--color-primary)" />
+                                </marker>
+                                <marker id="arrow-pending" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                    <path d="M 0 1 L 10 5 L 0 9 z" fill="var(--color-neutral)" />
+                                </marker>
+                                <marker id="arrow-supplementing" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                    <path d="M 0 1 L 10 5 L 0 9 z" fill="var(--color-supplementing)" />
+                                </marker>
+                                <marker id="arrow-rejected" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                    <path d="M 0 1 L 10 5 L 0 9 z" fill="var(--color-supplementing)" />
+                                </marker>
+                            </defs>
+                        </svg>
+                        
+                        <!-- Mindmap nodes tree will be rendered inside this div -->
+                        <div id="mindmap-tree" class="mindmap-tree"></div>
+                    </div>
+                </div>
+                
+                <!-- Floating Zoom Controls -->
+                <div class="zoom-controls">
+                    <button id="btn-zoom-in" class="zoom-btn" title="Phóng to"><i class="fa-solid fa-plus"></i></button>
+                    <button id="btn-zoom-out" class="zoom-btn" title="Thu nhỏ"><i class="fa-solid fa-minus"></i></button>
+                    <button id="btn-zoom-reset" class="zoom-btn" title="Về 100%"><i class="fa-solid fa-arrows-to-dot"></i></button>
+                    <button id="btn-zoom-fit" class="zoom-btn" title="Nhìn toàn cảnh"><i class="fa-solid fa-expand"></i></button>
+                    <span class="zoom-badge" id="zoom-badge">100%</span>
+                </div>
+
+                <!-- Navigation Help Overlay -->
+                <div class="nav-help">
+                    <i class="fa-solid fa-circle-info"></i> Giữ chuột trái ở khoảng trống để kéo sơ đồ. Cuộn chuột để zoom. Kéo thả trực tiếp thanh tiêu đề các ô để di chuyển.
+                </div>
+            </div>
+            
+            <!-- Empty state when no proposal selected -->
+            <div class="empty-state" id="empty-state">
+                <div class="empty-icon">
+                    <i class="fa-solid fa-project-diagram"></i>
+                </div>
+                <h2>Chưa có tờ trình nào được chọn</h2>
+                <p>Chọn một tờ trình từ danh mục bên trái hoặc tạo mới một tờ trình để bắt đầu thiết lập quy trình xử lý.</p>
+            </div>
+        </main>
+    </div>
+
+    <!-- Create Proposal Modal -->
+    <div id="modal-proposal" class="modal">
+        <div class="modal-content glassmorphism">
+            <div class="modal-header">
+                <h2>Tạo Tờ Trình Mới</h2>
+                <span class="close-btn" id="close-proposal-modal">&times;</span>
+            </div>
+            <form id="form-new-proposal">
+                <div class="form-group">
+                    <label for="proposal-title">Tên Tờ Trình <span class="required">*</span></label>
+                    <input type="text" id="proposal-title" required placeholder="Ví dụ: Tờ trình phê duyệt phương án nhân sự">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="proposal-creator">Người Đề Xuất <span class="required">*</span></label>
+                        <input type="text" id="proposal-creator" required placeholder="Nguyễn Văn A">
+                    </div>
+                    <div class="form-group">
+                        <label for="proposal-dept">Bộ Phận</label>
+                        <input type="text" id="proposal-dept" placeholder="Ví dụ: Phòng Nhân sự">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <!-- Proposal classification selector UBKHCL / UBNS -->
+                    <div class="form-group">
+                        <label for="proposal-category">Phân Loại Ủy Ban <span class="required">*</span></label>
+                        <select id="proposal-category" required>
+                            <option value="ubkhcl">UB KHCL (Kế hoạch Chiến lược)</option>
+                            <option value="ubns">UB NS (Nhân sự)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="proposal-desc">Nội Dung Tóm Tắt</label>
+                    <textarea id="proposal-desc" rows="2" placeholder="Tóm tắt ngắn gọn nội dung tờ trình..."></textarea>
+                </div>
+                <!-- Document URL and custom Link Text fields inside New Proposal Form -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="proposal-link">Liên Kết Tài Liệu Gốc (URL)</label>
+                        <input type="url" id="proposal-link" placeholder="https://example.com/tai-lieu-goc">
+                    </div>
+                    <div class="form-group">
+                        <label for="proposal-link-label">Tên Hiển Thị Liên Kết</label>
+                        <input type="text" id="proposal-link-label" placeholder="Ví dụ: Tài liệu gốc tờ trình">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="btn-cancel-proposal">Hủy</button>
+                    <button type="submit" class="btn btn-primary">Tạo mới</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Node Modal -->
+    <div id="modal-node" class="modal">
+        <div class="modal-content glassmorphism">
+            <div class="modal-header">
+                <h2 id="node-modal-title">Cập Nhật Bước Xử Lý</h2>
+                <span class="close-btn" id="close-node-modal">&times;</span>
+            </div>
+            <form id="form-edit-node">
+                <input type="hidden" id="edit-node-id">
+                
+                <div class="form-group">
+                    <label for="node-label">Tên Bước Xử Lý <span class="required">*</span></label>
+                    <input type="text" id="node-label" required placeholder="Ví dụ: Thẩm định giá">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="node-user">Người Thực Hiện</label>
+                        <input type="text" id="node-user" placeholder="Họ và tên người xử lý">
+                    </div>
+                    <div class="form-group">
+                        <label for="node-status">Trạng Thái</label>
+                        <select id="node-status">
+                            <option value="pending">Chờ xử lý (Xám)</option>
+                            <option value="in-progress">Đang xử lý (Xanh dương)</option>
+                            <option value="processed">Đã xử lý (Xanh teal)</option>
+                            <option value="supplementing">Chờ bổ sung (Cam)</option>
+                            <option value="completed">Đã hoàn thiện (Xanh lá)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="node-comment">Ý Kiến / Bình Luận</label>
+                    <textarea id="node-comment" rows="3" placeholder="Nhập ý kiến phê duyệt..."></textarea>
+                </div>
+
+                <div class="form-group" style="flex-direction: row; align-items: center; gap: 8px; margin-top: -5px; margin-bottom: 15px;">
+                    <input type="checkbox" id="node-is-final" style="width: auto; cursor: pointer;">
+                    <label for="node-is-final" style="cursor: pointer; margin-bottom: 0;">Đây là Bước Cuối (Quyết định tiến độ tờ trình)</label>
+                </div>
+
+                <div class="form-group" id="node-parents-container">
+                    <label>Liên kết từ các bước trước (Hướng mũi tên từ các bước đó chỉ vào bước này):</label>
+                    <div id="edit-node-parents" style="max-height: 120px; overflow-y: auto; border: 1px solid var(--border-color); padding: 8px; border-radius: 8px; background: var(--bg-input); display: flex; flex-direction: column; gap: 8px;">
+                        <!-- Dynamic list of parents checkboxes -->
+                    </div>
+                </div>
+
+                <!-- Node URL and Link Label fields -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="node-link">Liên Kết Tài Liệu (URL)</label>
+                        <input type="url" id="node-link" placeholder="https://example.com/tai-lieu-dinh-kem">
+                    </div>
+                    <div class="form-group">
+                        <label for="node-link-label">Tên Hiển Thị Liên Kết</label>
+                        <input type="text" id="node-link-label" placeholder="Ví dụ: Xem Báo cáo thẩm định">
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="btn-cancel-node">Hủy</button>
+                    <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Sub-Node Modal -->
+    <div id="modal-subnode" class="modal">
+        <div class="modal-content glassmorphism">
+            <div class="modal-header">
+                <h2>Thêm Bước Xử Lý Tiếp Theo (Rẽ Nhánh)</h2>
+                <span class="close-btn" id="close-subnode-modal">&times;</span>
+            </div>
+            <form id="form-add-subnode">
+                <input type="hidden" id="parent-node-id">
+                
+                <div class="form-group">
+                    <label for="subnode-label">Tên Bước Xử Lý Mới <span class="required">*</span></label>
+                    <input type="text" id="subnode-label" required placeholder="Ví dụ: Lãnh đạo phê duyệt">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="subnode-user">Người Thực Hiện</label>
+                        <input type="text" id="subnode-user" placeholder="Họ và tên người xử lý">
+                    </div>
+                    <div class="form-group">
+                        <label for="subnode-status">Trạng Thái Ban Đầu</label>
+                        <select id="subnode-status">
+                            <option value="pending">Chờ xử lý (Xám)</option>
+                            <option value="in-progress">Đang xử lý (Xanh dương)</option>
+                            <option value="processed">Đã xử lý (Xanh teal)</option>
+                            <option value="supplementing">Chờ bổ sung (Cam)</option>
+                            <option value="completed">Đã hoàn thiện (Xanh lá)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="subnode-comment">Ý Kiến / Bình Luận</label>
+                    <textarea id="subnode-comment" rows="2" placeholder="Ý kiến ban đầu hoặc ghi chú..."></textarea>
+                </div>
+
+                <div class="form-group" style="flex-direction: row; align-items: center; gap: 8px; margin-top: -5px; margin-bottom: 15px;">
+                    <input type="checkbox" id="subnode-is-final" style="width: auto; cursor: pointer;">
+                    <label for="subnode-is-final" style="cursor: pointer; margin-bottom: 0;">Đây là Bước Cuối (Quyết định tiến độ tờ trình)</label>
+                </div>
+
+                <div class="form-group" id="subnode-parents-container">
+                    <label>Liên kết từ các bước trước (Hướng mũi tên từ các bước đó chỉ vào bước này):</label>
+                    <div id="add-node-parents" style="max-height: 120px; overflow-y: auto; border: 1px solid var(--border-color); padding: 8px; border-radius: 8px; background: var(--bg-input); display: flex; flex-direction: column; gap: 8px;">
+                        <!-- Dynamic list of parents checkboxes -->
+                    </div>
+                </div>
+
+                <!-- Sub-node URL and Link Label fields -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="subnode-link">Liên Kết Tài Liệu (URL)</label>
+                        <input type="url" id="subnode-link" placeholder="https://example.com/tai-lieu-dinh-kem">
+                    </div>
+                    <div class="form-group">
+                        <label for="subnode-link-label">Tên Hiển Thị Liên Kết</label>
+                        <input type="text" id="subnode-link-label" placeholder="Ví dụ: Bản vẽ kỹ thuật mẫu">
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="btn-cancel-subnode">Hủy</button>
+                    <button type="submit" class="btn btn-primary">Thêm bước</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script src="app.js"></script>
+</body>
+</html>
