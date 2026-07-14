@@ -696,6 +696,11 @@ body.light-mode .cat-ubns {
     cursor: grabbing;
 }
 
+.mindmap-node.selected {
+    border-color: var(--color-primary) !important;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.25), var(--shadow-lg) !important;
+}
+
 .mindmap-node:hover {
     box-shadow: var(--shadow-lg), 0 0 15px rgba(255, 255, 255, 0.05);
     background-color: var(--bg-card-hover);

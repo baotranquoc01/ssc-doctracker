@@ -175,9 +175,10 @@ let isPanning = false;
 let startX = 0;
 let startY = 0;
 
-// Node Drag State
+// Node Drag & Selection State
 let isDraggingNode = false;
 let draggedNodeId = null;
+let selectedNodeId = null;
 let nodeDragStartX = 0;
 let nodeDragStartY = 0;
 let nodeInitX = 0;
@@ -707,6 +708,10 @@ function setupZoomPan() {
         if (e.target.closest("button") || e.target.closest("a") || e.target.closest("select") || e.target.closest("input") || e.target.closest("textarea") || e.target.closest(".mindmap-node")) {
             return;
         }
+
+        // Clear highlighted node selection when clicking canvas background
+        selectedNodeId = null;
+        document.querySelectorAll(".mindmap-node").forEach(el => el.classList.remove("selected"));
 
         isPanning = true;
         startX = e.clientX - panX;
@@ -1453,6 +1458,9 @@ function buildNodeDOM(node, proposal) {
     // Node Box HTML
     const nodeBox = document.createElement("div");
     nodeBox.className = `mindmap-node ${isRoot ? 'node-root' : `node-${node.status}`}`;
+    if (node.id === selectedNodeId) {
+        nodeBox.classList.add("selected");
+    }
     nodeBox.setAttribute("data-id", node.id);
     
     // Position absolute using graph coordinates
@@ -1563,6 +1571,15 @@ function buildNodeDOM(node, proposal) {
         nodeInitY = node.y || 120;
 
         document.body.style.cursor = "move";
+    });
+
+    // Select node on click to highlight it
+    nodeBox.addEventListener("click", (e) => {
+        e.stopPropagation();
+        
+        document.querySelectorAll(".mindmap-node").forEach(el => el.classList.remove("selected"));
+        nodeBox.classList.add("selected");
+        selectedNodeId = node.id;
     });
 
     return nodeBox;
