@@ -183,6 +183,10 @@ let nodeDragStartY = 0;
 let nodeInitX = 0;
 let nodeInitY = 0;
 
+// Sidebar Pagination State
+let currentSidebarPage = 1;
+const SIDEBAR_PAGE_SIZE = 20;
+
 // ResizeObserver for card resizing
 let nodeResizeObserver = null;
 
@@ -249,7 +253,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // Initialize Theme from LocalStorage
 function initTheme() {
-    const savedTheme = localStorage.getItem("docmap_theme");
+    const savedTheme = localStorage.getItem("docmap_theme") || "light";
     if (savedTheme === "light") {
         document.body.classList.add("light-mode");
         btnThemeToggle.innerHTML = `<i class="fa-solid fa-sun"></i>`;
@@ -480,20 +484,22 @@ function setupEventListeners() {
     });
 
     // Search, Category & Sort & Date Filter
-    searchInputEl.addEventListener("input", () => renderSidebar());
-    categoryFilterSelectEl.addEventListener("change", () => renderSidebar());
-    sortSelectEl.addEventListener("change", () => renderSidebar());
+    searchInputEl.addEventListener("input", () => { currentSidebarPage = 1; renderSidebar(); });
+    categoryFilterSelectEl.addEventListener("change", () => { currentSidebarPage = 1; renderSidebar(); });
+    sortSelectEl.addEventListener("change", () => { currentSidebarPage = 1; renderSidebar(); });
 
     // Date Filter Input Event Listeners
     dateFilterInputEl.addEventListener("change", () => {
         const hasVal = !!dateFilterInputEl.value;
         btnClearDateEl.style.display = hasVal ? "block" : "none";
+        currentSidebarPage = 1;
         renderSidebar();
     });
 
     btnClearDateEl.addEventListener("click", () => {
         dateFilterInputEl.value = "";
         btnClearDateEl.style.display = "none";
+        currentSidebarPage = 1;
         renderSidebar();
     });
 
@@ -504,6 +510,7 @@ function setupEventListeners() {
             tabButtons.forEach(b => b.classList.remove("active"));
             btn.classList.add("active");
             activeFilterTab = btn.getAttribute("data-status");
+            currentSidebarPage = 1;
             renderSidebar();
         });
     });
@@ -725,18 +732,14 @@ function setupZoomPan() {
     // Mouse wheel zoom centering
     mapViewportEl.addEventListener("wheel", (e) => {
         e.preventDefault();
-        const zoomIntensity = 0.08;
         
         const rect = mapViewportEl.getBoundingClientRect();
         const mouseX = e.clientX - rect.left;
         const mouseY = e.clientY - rect.top;
 
-        let nextZoom;
-        if (e.deltaY < 0) {
-            nextZoom = Math.min(2.0, zoom + zoomIntensity);
-        } else {
-            nextZoom = Math.max(0.4, zoom - zoomIntensity);
-        }
+        // Exponential zoom based on deltaY magnitude for smooth trackpad and mousewheel zoom
+        const zoomFactor = -e.deltaY * 0.0012;
+        const nextZoom = Math.min(2.0, Math.max(0.4, zoom * Math.exp(zoomFactor)));
 
         // Keep focal zoom point centered
         const xs = (mouseX - panX) / zoom;
@@ -849,6 +852,7 @@ function setupBackupRestore() {
                 if (Array.isArray(imported)) {
                     proposals = imported;
                     saveData();
+                    currentSidebarPage = 1;
                     renderSidebar();
                     if (proposals.length > 0) {
                         selectProposal(proposals[0].id);
@@ -901,8 +905,9 @@ function zoomFit() {
     const scaleY = viewportHeight / contentHeight;
     zoom = Math.min(Math.max(0.4, Math.min(scaleX, scaleY)), 1.2); 
     
-    const centerX = (minX + maxX) / 2;
-    const centerY = (minY + maxY) / 2;
+    // Shift center by 400px to account for the padding on .map-content
+    const centerX = (minX + maxX) / 2 + 400;
+    const centerY = (minY + maxY) / 2 + 400;
     
     panX = viewportWidth / 2 - centerX * zoom;
     panY = viewportHeight / 2 - centerY * zoom;
@@ -1224,14 +1229,30 @@ function renderSidebar() {
         return 0;
     });
 
+    const totalItems = filtered.length;
+    const totalPages = Math.ceil(totalItems / SIDEBAR_PAGE_SIZE);
+    
+    if (currentSidebarPage > totalPages) {
+        currentSidebarPage = Math.max(1, totalPages);
+    }
+    
+    const startIndex = (currentSidebarPage - 1) * SIDEBAR_PAGE_SIZE;
+    const endIndex = Math.min(startIndex + SIDEBAR_PAGE_SIZE, totalItems);
+    const paginatedItems = filtered.slice(startIndex, endIndex);
+
     proposalListEl.innerHTML = "";
 
-    if (filtered.length === 0) {
+    if (totalItems === 0) {
         proposalListEl.innerHTML = `<li class="sidebar-empty" style="text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 20px;">Không tìm thấy tờ trình nào</li>`;
+        const paginationContainer = document.getElementById("sidebar-pagination");
+        if (paginationContainer) {
+            paginationContainer.innerHTML = "";
+            paginationContainer.style.display = "none";
+        }
         return;
     }
 
-    filtered.forEach(prop => {
+    paginatedItems.forEach((prop, index) => {
         const li = document.createElement("li");
         li.className = `proposal-item ${prop.id === activeProposalId ? "active" : ""}`;
         li.addEventListener("click", () => selectProposal(prop.id));
@@ -1245,12 +1266,17 @@ function renderSidebar() {
         let statusText = getVietnameseStatus(prop.status);
         const statusClass = prop.status === 'rejected' ? 'supplementing' : prop.status;
 
-        // Display category badge inside sidebar item
         let catBadgeText = prop.category === "ubkhcl" ? "UB KHCL" : "UB NS";
         let catBadgeClass = prop.category === "ubkhcl" ? "cat-ubkhcl" : "cat-ubns";
 
+        const globalIndex = startIndex + index + 1;
+        const sttText = globalIndex < 10 ? `0${globalIndex}` : globalIndex;
+
         li.innerHTML = `
-            <div class="proposal-item-title">${prop.title}</div>
+            <div class="proposal-item-header">
+                <span class="proposal-item-stt">${sttText}</span>
+                <div class="proposal-item-title">${prop.title}</div>
+            </div>
             <div class="proposal-item-meta">
                 <span><i class="fa-regular fa-clock"></i> ${formattedDate}</span>
                 <span class="proposal-category-badge ${catBadgeClass}">${catBadgeText}</span>
@@ -1258,6 +1284,46 @@ function renderSidebar() {
             </div>
         `;
         proposalListEl.appendChild(li);
+    });
+
+    renderPagination(totalPages);
+}
+
+function renderPagination(totalPages) {
+    const paginationContainer = document.getElementById("sidebar-pagination");
+    if (!paginationContainer) return;
+
+    if (totalPages <= 1) {
+        paginationContainer.innerHTML = "";
+        paginationContainer.style.display = "none";
+        return;
+    }
+
+    paginationContainer.style.display = "flex";
+    paginationContainer.innerHTML = `
+        <button class="pagination-btn" id="pagination-prev" ${currentSidebarPage === 1 ? 'disabled' : ''}>
+            <i class="fa-solid fa-chevron-left"></i>
+        </button>
+        <span class="pagination-info">${currentSidebarPage} / ${totalPages}</span>
+        <button class="pagination-btn" id="pagination-next" ${currentSidebarPage === totalPages ? 'disabled' : ''}>
+            <i class="fa-solid fa-chevron-right"></i>
+        </button>
+    `;
+
+    document.getElementById("pagination-prev").addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (currentSidebarPage > 1) {
+            currentSidebarPage--;
+            renderSidebar();
+        }
+    });
+
+    document.getElementById("pagination-next").addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (currentSidebarPage < totalPages) {
+            currentSidebarPage++;
+            renderSidebar();
+        }
     });
 }
 
