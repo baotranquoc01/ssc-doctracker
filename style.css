@@ -1195,3 +1195,32 @@ body.light-mode .connection-line {
     stroke: var(--color-supplementing);
     opacity: 0.9;
 }
+
+/* Sidebar Footer & Backup/Restore Utilities */
+.sidebar-footer {
+    display: flex;
+    gap: 8px;
+    padding: 12px 16px;
+    border-top: 1px solid var(--border-color);
+    background-color: var(--sidebar-bg);
+}
+.sidebar-footer-btn {
+    flex: 1;
+    background: transparent;
+    border: 1px dashed var(--border-color);
+    color: var(--text-muted);
+    font-size: 0.72rem;
+    padding: 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    transition: all 0.2s ease;
+}
+.sidebar-footer-btn:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    background-color: rgba(59, 130, 246, 0.05);
+}

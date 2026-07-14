@@ -59,16 +59,6 @@
                         <option value="status">Trạng thái</option>
                     </select>
                 </div>
-                <!-- Backup & Restore Data Row (Hidden per request) -->
-                <div class="backup-restore-row" style="display: none;">
-                    <button id="btn-export-data" class="btn btn-secondary btn-sm" title="Xuất toàn bộ dữ liệu ra tệp JSON">
-                        <i class="fa-solid fa-file-export"></i> Xuất JSON
-                    </button>
-                    <button id="btn-import-data" class="btn btn-secondary btn-sm" title="Nhập dữ liệu từ tệp JSON">
-                        <i class="fa-solid fa-file-import"></i> Nhập JSON
-                    </button>
-                    <input type="file" id="import-file-input" style="display: none;" accept=".json">
-                </div>
             </div>
 
             <!-- Status Tabs for 100+ proposals filtering -->
@@ -99,6 +89,16 @@
                 <ul id="proposal-list" class="proposal-list">
                     <!-- Dynamic proposal items will be rendered here -->
                 </ul>
+            </div>
+
+            <div class="sidebar-footer">
+                <button id="btn-export-data" class="sidebar-footer-btn" title="Xuất toàn bộ dữ liệu ra tệp JSON">
+                    <i class="fa-solid fa-file-export"></i> Sao lưu (JSON)
+                </button>
+                <button id="btn-import-data" class="sidebar-footer-btn" title="Nhập dữ liệu từ tệp JSON">
+                    <i class="fa-solid fa-file-import"></i> Phục hồi (JSON)
+                </button>
+                <input type="file" id="import-file-input" style="display: none;" accept=".json">
             </div>
         </aside>
 
